@@ -11,7 +11,7 @@ PC startup  ──Wake-on-LAN──────────▶ NAS
 
 No always-on helper device is needed: the NAS wakes itself from its hardware clock.
 
-## 1. NAS setup (Linux-based: Debian/OMV/TrueNAS SCALE/Unraid-style shells)
+## 1. NAS setup (TrueNAS SCALE: see `nas/TRUENAS.md`; generic Linux below)
 1. In BIOS enable **RTC/Resume by Alarm** and **Wake on LAN** (also enable WoL on the NIC: `ethtool -s eth0 wol g`).
 2. Verify the RTC can wake it: `sudo rtcwake -m mem -s 60` (should resume after a minute).
 3. On the PC run its installer first (it prints a public key), then on the NAS as root:

@@ -3,7 +3,8 @@
 # powers itself back on at WAKE_TIME. Called over SSH by the PC at shutdown.
 set -eu
 
-CONF=/etc/nas-sleep.conf
+CONF="${NAS_SLEEP_CONF:-$(dirname "$(readlink -f "$0")")/nas-sleep.conf}"   # lives next to the script (survives TrueNAS updates)
+[ -f "$CONF" ] || CONF=/etc/nas-sleep.conf
 WAKE_TIME="08:00"      # local time to wake
 MODE="off"             # off = full power-off + RTC wake, mem = suspend-to-RAM
 GRACE=30               # seconds to wait so the SSH call returns / PC can abort
