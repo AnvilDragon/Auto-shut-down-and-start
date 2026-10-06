@@ -20,3 +20,10 @@ so everything is done through the UI and the script lives on a pool dataset.
 
 Notes: don't schedule scrubs/SMART tests/replication while the NAS is off; apps/VMs are stopped
 cleanly by the OS shutdown that `rtcwake -m off` triggers.
+
+## Dedicated 10.0.0.x link (NAS 10.0.0.15 ↔ PC 10.0.0.14)
+- `PC_HOST="10.0.0.14"` in `nas-sleep.conf`; PC installer uses `-NasHost 10.0.0.15 -LocalIp 10.0.0.14`.
+- Wake-on-LAN must target the MAC of the NAS NIC that carries 10.0.0.15, and Wake on LAN must be
+  enabled on *that* NIC (BIOS + `ethtool -s <nic> wol g`; in TrueNAS add it as a post-init command).
+- SSH must be reachable on that interface (Services ▸ SSH has no bind-interface limit by default).
+- The 08:00 wake uses the RTC and doesn't depend on any NIC.

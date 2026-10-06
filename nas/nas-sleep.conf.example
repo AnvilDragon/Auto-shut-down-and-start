@@ -2,4 +2,4 @@
 WAKE_TIME="08:00"
 MODE="off"
 GRACE=30
-PC_HOST="192.168.1.50"   # your PC's IP; lets the NAS cancel if the PC restarted
+PC_HOST="10.0.0.14"   # your PC's IP; lets the NAS cancel if the PC restarted

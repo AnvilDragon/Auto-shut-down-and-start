@@ -9,7 +9,7 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-Environment=NAS_HOST=192.168.1.20 NAS_MAC=aa:bb:cc:dd:ee:ff KEY=/root/.ssh/nas-sleep
+Environment=NAS_HOST=10.0.0.15 NAS_MAC=aa:bb:cc:dd:ee:ff KEY=/root/.ssh/nas-sleep
 ExecStart=/bin/sh -c 'wakeonlan "$NAS_MAC" || etherwake "$NAS_MAC" || true'
 ExecStop=/bin/sh -c 'systemctl list-jobs | grep -Eq "reboot.target.*start" && exit 0; ssh -i "$KEY" -o BatchMode=yes -o ConnectTimeout=5 nassleep@"$NAS_HOST" nas-sleep || true'
 

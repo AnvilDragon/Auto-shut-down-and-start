@@ -1,12 +1,13 @@
 # Run in an elevated PowerShell:
-#   .\install.ps1 -NasHost 192.168.1.20 -NasMac aa:bb:cc:dd:ee:ff
-param([Parameter(Mandatory)]$NasHost, [Parameter(Mandatory)]$NasMac)
+#   .\install.ps1 -NasHost 10.0.0.15 -NasMac aa:bb:cc:dd:ee:ff -LocalIp 10.0.0.14
+# -NasMac must be the MAC of the NAS NIC on the NasHost link; -LocalIp is the PC's address on that link.
+param([Parameter(Mandatory)]$NasHost, [Parameter(Mandatory)]$NasMac, $LocalIp='')
 $dir = "$env:ProgramData\nas-sleep"; New-Item -ItemType Directory -Force $dir | Out-Null
 Copy-Item "$PSScriptRoot\nas-sleep.ps1","$PSScriptRoot\nas-wake.ps1" $dir -Force
 $key = "$dir\id_ed25519"
 if (-not (Test-Path $key)) { & "$env:SystemRoot\System32\OpenSSH\ssh-keygen.exe" -t ed25519 -N '""' -f $key -C nas-sleep }
 icacls $key /inheritance:r /grant:r "SYSTEM:(R)" "Administrators:(R)" | Out-Null
-@{NasHost=$NasHost; NasMac=$NasMac; KeyPath=$key} | ConvertTo-Json | Set-Content "$dir\config.json"
+@{NasHost=$NasHost; NasMac=$NasMac; LocalIp=$LocalIp; KeyPath=$key} | ConvertTo-Json | Set-Content "$dir\config.json"
 
 $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $st = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries
