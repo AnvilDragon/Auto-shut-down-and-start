@@ -11,6 +11,16 @@ PC startup  ──Wake-on-LAN──────────▶ NAS
 
 No always-on helper device is needed: the NAS wakes itself from its hardware clock.
 
+## Quick start (two single files in `dist/`)
+1. BIOS (NAS): enable RTC alarm wake + Wake-on-LAN.
+2. Windows (NAS powered on): `powershell -ExecutionPolicy Bypass -File dist\Install-NasSleep.ps1`
+   - installs the tasks, auto-detects the NAS MAC, prints/copies the NAS command.
+3. Copy `dist/setup-truenas.sh` to the NAS: `scp dist\setup-truenas.sh <admin-user>@10.0.0.15:/tmp/`
+4. On the NAS (UI > System > Shell or SSH): `sudo sh /tmp/setup-truenas.sh <POOL> '<key from step 2>' 10.0.0.14`
+5. Test RTC wake once: `sudo rtcwake -m mem -s 60`. Then shut down the PC and check the NAS.
+
+`dist/*` embed `nas/nas-sleep.sh` and `pc/windows/*.ps1`; regenerate them if you edit those.
+
 ## 1. NAS setup (TrueNAS SCALE: see `nas/TRUENAS.md`; generic Linux below)
 1. In BIOS enable **RTC/Resume by Alarm** and **Wake on LAN** (also enable WoL on the NIC: `ethtool -s eth0 wol g`).
 2. Verify the RTC can wake it: `sudo rtcwake -m mem -s 60` (should resume after a minute).
