@@ -36,6 +36,33 @@
   function lastShot(before){var s=null;state.shots.forEach(function(x){if(!before||x.date<=before)s=x});return s}
   function val(e,k){if(!e)return null;if(k==="tes"){var a=num(e.tL),b=num(e.tR);return a!=null&&b!=null?(a+b)/2:(a!=null?a:b)}if(k==="diff"){var u=num(e.bust),w=num(e.under);return u!=null&&w!=null?u-w:null}return num(e[k])}
 
+
+  // ---- classification (reference ranges; descriptive, not goals) ----
+  var CUPS=["AA","A","B","C","D","DD","DDD","G","H","I","J"];
+  // Veale et al. 2015, BJU Int: pooled adult male lengths in cm [mean, SD]
+  var PEN={flac:[9.16,1.57],len:[13.24,1.89],erect:[13.12,1.66]};
+  function cdf(z){var t=1/(1+0.2316419*Math.abs(z)),d=0.3989423*Math.exp(-z*z/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p}
+  function ord(n){var v=n%100;return n+(v>10&&v<14?"th":["th","st","nd","rd"][n%10]||"th")}
+  function penCat(p){return p<5?"Below typical range":p<25?"Smaller than average":p<=75?"Average":p<=95?"Larger than average":"Above typical range"}
+  function testCat(v){return v>=15?"Adult size range":v>=12?"Slightly below adult range":v>=4?"Pubertal size range":"Prepubertal size range"}
+  function classify(e){
+    var rows=[];e=e||{};
+    var b=num(e.bust),u=num(e.under);
+    if(b!=null&&u!=null){var band=Math.max(28,Math.round(u/2)*2),d=Math.max(0,Math.round(b-u));
+      rows.push(["Breast",band+(d>=CUPS.length?"J+":CUPS[d]),"Estimated US bra size (band from underbust, cup from "+r(b-u,2)+" in difference). Brands vary."])}
+    [["flac","Flaccid length"],["len","Stretched length"],["erect","Erect length"]].forEach(function(k){
+      var v=num(e[k[0]]);if(v==null)return;var cm=v*2.54,z=(cm-PEN[k[0]][0])/PEN[k[0]][1],p=Math.min(99,Math.max(1,Math.round(cdf(z)*100)));
+      rows.push([k[1],r(v,2)+" in ("+r(cm,1)+" cm)",ord(p)+" percentile, "+penCat(p).toLowerCase()])});
+    var t=val(e,"tes");
+    if(t!=null)rows.push(["Testicles","avg "+r(t,1)+" mL",testCat(t)+(num(e.tL)!=null&&num(e.tR)!=null?" (L "+r(num(e.tL),1)+", R "+r(num(e.tR),1)+" mL)":"")]);
+    return rows;
+  }
+  function classHtml(e){
+    var rows=classify(e);
+    return '<h2>Classification</h2>'+(rows.length?'<table><tbody>'+rows.map(function(x){return '<tr><th scope="row">'+esc(x[0])+'</th><td><b>'+esc(x[1])+'</b><br><span class="unit">'+esc(x[2])+'</span></td></tr>'}).join("")+'</tbody></table>':'<p class="empty">Enter bust and underbust, penis lengths or testicle volumes to see where they fall.</p>')+
+      '<p class="note">Penis lengths are compared with measured adult male averages (Veale et al. 2015, BJU International; flaccid 9.2 cm, stretched 13.2 cm, erect 13.1 cm). Testicle volume uses the Prader orchidometer bands (adult 15 to 25 mL). These are reference ranges for context, not targets or diagnoses. Hormone therapy is expected to change them.</p>';
+  }
+
   function alerts(){
     var out=[],t=dn(today()),ls=lastShot();
     if(ls){var due=dn(ls.date)+(state.shotEvery||7),left=due-t;
@@ -74,6 +101,7 @@
     return '<section class="panel"><div class="grid"><label class="f">Date<input type="date" id="day" value="'+esc(day)+'" max="'+today()+'"></label><label class="f">Time measured<input type="time" id="e-time" data-e="time" value="'+esc(e.time||"")+'"'+dis+'></label></div>'+
       '<div class="grid">'+FIELDS.map(function(f){return '<label class="f">'+f[1]+' <span class="unit">'+f[2]+'</span><input type="number" inputmode="decimal" step="'+f[3]+'" min="0" id="e-'+f[0]+'" data-e="'+f[0]+'" value="'+esc(e[f[0]]==null?"":e[f[0]])+'"'+dis+'></label>'}).join("")+'</div>'+
       '<label class="f">Notes<textarea id="e-note" data-e="note" placeholder="Tenderness, mood, sleep, anything unusual"'+dis+'>'+esc(e.note||"")+'</textarea></label>'+
+      '<div class="helper" id="cls">'+classHtml(e)+'</div>'+
       '<div class="helper"><h2>Testicle volume helper</h2><p>Measure through the skin with a soft tape or calipers, in centimeters: length (top to bottom), width (side to side) and depth (front to back). Volume = 0.52 × L × W × D. Leave depth blank to use width twice.</p>'+
       '<div class="row3"><label class="f">Length <span class="unit">cm</span><input type="number" step="0.1" min="0" id="h-L" data-hp="L" value="'+esc(helper.L)+'"></label><label class="f">Width <span class="unit">cm</span><input type="number" step="0.1" min="0" id="h-W" data-hp="W" value="'+esc(helper.W)+'"></label><label class="f">Depth <span class="unit">cm</span><input type="number" step="0.1" min="0" id="h-D" data-hp="D" value="'+esc(helper.D)+'"></label></div>'+
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="vol" id="vol">'+(vol?r(vol,1)+" mL":"- mL")+'</span><button class="btn sm" data-act="useL"'+(vol&&!readOnly&&!loading?"":" disabled")+'>Use for left</button><button class="btn sm" data-act="useR"'+(vol&&!readOnly&&!loading?"":" disabled")+'>Use for right</button></div></div>'+
@@ -144,6 +172,7 @@
     if(t.dataset.e){var e=entry(day);if(!e){e={date:day};if(day===today())e.time=nowTime();state.entries.push(e);sortAll();var te=document.getElementById("e-time");if(te&&!te.value&&e.time)te.value=e.time}
       if(t.dataset.e==="note"||t.dataset.e==="time"){if(v)e[t.dataset.e]=v;else delete e[t.dataset.e]}else{var n=pos(v);if(n==null)delete e[t.dataset.e];else e[t.dataset.e]=n}
       if(Object.keys(e).filter(function(k){return k!=="date"&&k!=="time"}).length===0)state.entries.splice(state.entries.indexOf(e),1);
+      var cl=document.getElementById("cls");if(cl)cl.innerHTML=classHtml(e);
       refreshBar();return}
     if(t.id==="conc"){var c=pos(v);if(c){state.conc=c;state.shots.forEach(function(s,i){var m=document.getElementById("s-mg-"+i);if(m)m.textContent=r(s.ml*c,1)+" mg"})}refreshBar();return}
     if(t.dataset.s!=null){var s=state.shots[+t.dataset.s];if(t.dataset.k==="ml"){var x=pos(v);if(x!=null){s.ml=x;document.getElementById("s-mg-"+t.dataset.s).textContent=r(x*state.conc,1)+" mg"}}else if(t.dataset.k==="date"?okDate(v):SITES.indexOf(v)>=0)s[t.dataset.k]=v;refreshBar();return}
