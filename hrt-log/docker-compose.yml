@@ -1,0 +1,20 @@
+# TrueNAS SCALE: Apps > Discover Apps > Custom App > "Install via YAML", paste this file.
+# Change the host path to a dataset you created (e.g. /mnt/<POOL>/apps/hrt-log) and
+# give it to user 568 (apps): chown -R 568:568 /mnt/<POOL>/apps/hrt-log
+services:
+  hrt-log:
+    build: .
+    image: hrt-log:latest
+    restart: unless-stopped
+    user: "568:568"
+    ports:
+      - "9080:8080"
+    environment:
+      # Set to 1 if you serve it only over HTTPS (reverse proxy); also auto-detected via X-Forwarded-Proto.
+      COOKIE_SECURE: "0"
+    volumes:
+      - /mnt/POOL/apps/hrt-log:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m

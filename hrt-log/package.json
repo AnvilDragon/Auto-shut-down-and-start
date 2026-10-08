@@ -1,0 +1,8 @@
+{
+  "name": "hrt-log",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sylvia's HRT Log: single-user, SQLite-backed, zero dependencies",
+  "engines": { "node": ">=22.13" },
+  "scripts": { "start": "node server.js" }
+}
